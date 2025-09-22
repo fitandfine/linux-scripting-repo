@@ -6,10 +6,7 @@ Welcome to my **Bash Scripting Learning Repository**! This repository is designe
 
 ## Contents
 
-* `study_notes.md` — Complete beginner-friendly Bash scripting guide
-* `scripts/` — Collection of practical scripts for IT tasks
-* `examples/` — Example outputs and usage
-* `.github/workflows/` — ShellCheck CI workflow for automated script linting
+This section will be updated in future.
 
 ---
 
@@ -95,7 +92,13 @@ fi
 
 * `-n STRING` → true if string is non-empty
 * `-f FILE` → true if file exists and is a regular file
-* Numeric operators: `-eq`, `-ne`, `-lt`, `-le`, `-gt`, `-ge`
+* Numeric operators: 
+        `-eq  # Equal to`
+        `-ne  # Not Equal to`
+        `-lt  # Less than`
+        `-le  # Less than or equal to`
+        `-gt  # Greater than`
+        `-ge  # Greater than or equal to`
 * `[[ ... ]]` → recommended for condition tests
 
 #### Case statements
