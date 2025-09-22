@@ -90,16 +90,18 @@ else
 fi
 ```
 
-* `-n STRING` → true if string is non-empty
-* `-f FILE` → true if file exists and is a regular file
-* Numeric operators: 
-        ** `-eq  # Equal to`
-        ** `-ne  # Not Equal to`
-        ** `-lt  # Less than`
-        ** `-le  # Less than or equal to`
-        ** `-gt  # Greater than`
-        ** `-ge  # Greater than or equal **to`
-* `[[ ... ]]` → recommended for condition tests
+* `-n STRING` $\rightarrow$ true if string is non-empty
+* `-f FILE` $\rightarrow$ true if file exists and is a regular file
+---
+### Numeric operators:
+* `-eq` $\rightarrow$ Equal to
+* `-ne` $\rightarrow$ Not Equal to
+* `-lt` $\rightarrow$ Less than
+* `-le` $\rightarrow$ Less than or equal to
+* `-gt` $\rightarrow$ Greater than
+* `-ge` $\rightarrow$ Greater than or equal to
+---
+* `[[ ... ]]` $\rightarrow$ recommended for condition tests
 
 #### Case statements*
 
@@ -261,4 +263,3 @@ fi
 
 ---
 
-This repository is a complete guide and playground for beginners to **learn, practice, and demonstrate** Bash scripting skills on GitHub. All scripts are documented, safe, and read
