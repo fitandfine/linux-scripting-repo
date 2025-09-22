@@ -80,6 +80,8 @@ $@  # all arguments as separate words
 $*  # all arguments as a single string
 $#  # number of arguments
 $!  # PID of last background process
+$?  # the exit status of the most recently executed foreground command.
+     A value of 0 means success. Any other value (from 1 to 255) means failure.
 ```
 
 ### 4. Conditionals
