@@ -34,11 +34,16 @@ cd linux-scripting-repo
 ```bash
 chmod +x scripts/*.sh
 ```
+or you can make individual script files executable as well with 
+```bash
+chmod +x your_script.sh
+```
+
 
 3. Run a script:
 
 ```bash
-./scripts/01-disk-usage-alert.sh --help
+./scripts/your_script.sh --help
 ```
 
 ---
