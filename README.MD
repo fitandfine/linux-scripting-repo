@@ -36,6 +36,7 @@ chmod +x scripts/*.sh
 ```
 or you can make individual script files executable as well with 
 ```bash
+cd scripts
 chmod +x your_script.sh
 ```
 
