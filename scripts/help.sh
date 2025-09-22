@@ -55,6 +55,7 @@ fi
 
 if [[ -n "$FILE" && -f $FILE ]]; then
     echo "Processing file: $FILE"
+    cat "$FILE"
     else
     echo "No valid file provided to process."
 fi
