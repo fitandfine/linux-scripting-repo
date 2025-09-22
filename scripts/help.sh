@@ -46,8 +46,15 @@ done
 # Use the options
 if [[ $VERBOSE -eq 1 ]]; then
     echo "Verbose mode enabled"
+    if [[ ! -f $FILE ]]; then
+     echo "File $FILE not found!"
+    else 
+    ls -l $FILE
+    fi 
 fi
 
-if [[ -n "$FILE" ]]; then
+if [[ -n "$FILE" && -f $FILE ]]; then
     echo "Processing file: $FILE"
+    else
+    echo "No valid file provided to process."
 fi
