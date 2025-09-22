@@ -117,7 +117,7 @@ fi
 case $1 in
   start) echo "Starting service";;
   stop) echo "Stopping service";;
-  *) echo "Unknown command";;
+  *) echo "Unknown command";;  # Wild card pattern match (like default case in C)
 esac
 ```
 
