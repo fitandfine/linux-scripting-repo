@@ -17,10 +17,10 @@ Welcome to my **Bash Scripting Learning Repository**! This repository is designe
 * Demonstrates key concepts: variables, loops, conditionals, functions, environment variables
 * Provides ready-to-run practical scripts for automation
 * Implements safety practices (`set -euo pipefail`) and clear documentation
-* Shows integration with GitHub Actions for code quality checks
+
+
 
 ---
-
 ## Quick Start
 
 1. Clone the repository:
@@ -271,4 +271,7 @@ fi
 * Gradually add functions, loops, and argument handling
 
 ---
+# Also check out this website:
+# https://explainshell.com/ by Idan Kamara
 
+# https://github.com/idank/explainshell 
