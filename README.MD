@@ -1,12 +1,13 @@
 # Bash Scripting Learning Repository
 
-Welcome to my **Bash Scripting Learning Repository**! This repository is designed for beginners to learn Linux Bash scripting from scratch and demonstrate practical scripting skills through real examples. It contains study notes, ready-to-run scripts, and explanations of fundamental Bash concepts.
+Welcome to my **Bash Scripting Learning Repository**! This repository is designed for beginners to learn Linux Bash scripting from scratch and demonstrate practical scripting skills through real examples. It contains study notes (explanations of fundamental Bash concepts) ready-to-run scripts.
 
 ---
 
 ## Contents
 
-This section will be updated in future.
+- **/notes** folder contains study materials on various topics.
+- **/scripts** folder contains codes with comments.
 
 ---
 
