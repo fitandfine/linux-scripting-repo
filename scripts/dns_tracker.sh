@@ -2,142 +2,134 @@
 # dns_tracker.sh
 # --------------------
 # Purpose:
-#   Monitor and analyze local DNS queries on Linux.
-#   Displays recent DNS queries, counts repeated queries, and allows real-time monitoring.
+#   Real-time DNS query monitoring on Linux.
+#   Captures all DNS queries on UDP port 53 and displays them live with timestamps.
+#   Repeated domains are highlighted in color.
+#   Optionally saves captured queries to a user-specified file.
 #
-# Important Note:
-#   This script cannot track encrypted DNS queries (DoH) or VPN traffic.
-#   Incognito/private browser queries may not appear if encrypted.
+# Notes:
+#   - Works only for unencrypted DNS (UDP 53). DoH/VPN queries will NOT appear.
+#   - Requires sudo/root privileges.
+#   - Requires tcpdump installed: sudo apt install tcpdump
+#   - Easy-to-use, GitHub-friendly, suitable for educational purposes.
+#
+# Features:
+#   - Live display of DNS queries.
+#   - Highlights repeated domains in red.
+#   - Shows timestamp for each query.
+#   - Optional file output.
+#   - Color-coded output for better readability.
 #
 # Usage:
-#   ./dns_query_tracker.sh [OPTIONS]
-# Options:
-#   -h | --help       Show help
-#   -f | --follow     Continuously follow new DNS queries
-#   -n | --number N   Show last N queries (default: 50)
+#   sudo ./dns_tracker.sh
+#   Press Ctrl+C to stop.
 #
-# Requirements:
-#   - Must have permission to read system logs (usually sudo)
-#   - Works with systemd-resolved logs or syslog
-
+# Running on Startup:
+#   1. Save this script, e.g., /usr/local/bin/dns_tracker.sh
+#   2. Make it executable: sudo chmod +x /usr/local/bin/dns_tracker.sh
+#   3. Create a systemd service: sudo nano /etc/systemd/system/dns_tracker.service
+#      [Unit]
+#      Description=Live DNS Tracker
+#
+#      [Service]
+#      ExecStart=/usr/local/bin/dns_tracker.sh
+#      Restart=always
+#      User=root
+#
+#      [Install]
+#      WantedBy=multi-user.target
+#
+#   4. Enable and start:
+#      sudo systemctl daemon-reload
+#      sudo systemctl enable dns_tracker.service
+#      sudo systemctl start dns_tracker.service
+#
+#   5. All live DNS queries will be logged in the specified file if chosen.
 set -euo pipefail
 
 # ---------------------------
-# Default Settings
+# Root check
 # ---------------------------
-FOLLOW=0
-NUM=50
-
-# ---------------------------
-# Function: Show Help
-# ---------------------------
-show_help() {
-  cat << EOF
-Usage: $0 [OPTIONS]
-
-Options:
-  -h, --help        Show this help message
-  -f, --follow      Continuously follow new DNS queries
-  -n, --number N    Show last N queries (default: 50)
-
-Examples:
-  $0               # Show last 50 DNS queries
-  $0 --follow      # Follow new queries in real-time
-  $0 -n 100        # Show last 100 queries
-EOF
-}
-
-# ---------------------------
-# Parse Arguments
-# ---------------------------
-while [[ $# -gt 0 ]]; do
-  case $1 in
-    -h|--help) show_help; exit 0 ;;
-    -f|--follow) FOLLOW=1; shift ;;
-    -n|--number)
-      NUM="${2:-50}"
-      shift 2
-      ;;
-    *)
-      echo "Unknown option: $1"
-      show_help
-      exit 1
-      ;;
-  esac
-done
-
-# ---------------------------
-# Determine Log Source
-# ---------------------------
-DNS_LOG_SOURCE="systemd-resolved"
-
-# ---------------------------
-# Function: Fetch DNS Queries
-# ---------------------------
-fetch_dns_logs() {
-  local follow="$1"
-  local num="$2"
-
-  echo "Fetching DNS queries from local logs..."
-
-  if [[ "$DNS_LOG_SOURCE" == "systemd-resolved" ]]; then
-    if ! command -v journalctl &>/dev/null; then
-      echo "journalctl not found. Install systemd or use syslog."
-      exit 1
-    fi
-
-    if [[ "$follow" -eq 1 ]]; then
-      # Follow DNS queries in real-time
-      sudo journalctl -u systemd-resolved -f | grep --line-buffered "DNS query" | awk '{print $0}'
-    else
-      # Show last N queries
-      sudo journalctl -u systemd-resolved | grep "DNS query" | tail -n "$num"
-    fi
-  else
-    # Fallback to syslog if systemd-resolved unavailable
-    SYSLOG="/var/log/syslog"
-    if [[ ! -f "$SYSLOG" ]]; then
-      echo "Syslog not found at $SYSLOG"
-      exit 1
-    fi
-
-    if [[ "$follow" -eq 1 ]]; then
-      sudo tail -f "$SYSLOG" | grep --line-buffered "named\|DNS"
-    else
-      sudo grep "named\|DNS" "$SYSLOG" | tail -n "$num"
-    fi
-  fi
-}
-
-# ---------------------------
-# Function: Summarize DNS Queries
-# ---------------------------
-summarize_queries() {
-  local logs="$1"
-
-  echo -e "\n📊 DNS Query Summary:"
-  echo "------------------------"
-
-  # Extract domain names from logs using awk/grep
-  # Works for systemd-resolved log format: "DNS query ... <domain>"
-  echo "$logs" | awk '{for(i=1;i<=NF;i++) if($i ~ /\./) print $i}' \
-    | sort \
-    | uniq -c \
-    | sort -nr \
-    | awk '{printf "%-40s %5s\n", $2, $1}'
-
-  echo "------------------------"
-  echo "Top repeated domains are listed above."
-}
-
-# ---------------------------
-# Main Execution
-# ---------------------------
-if [[ "$FOLLOW" -eq 1 ]]; then
-  echo "Following DNS queries in real-time. Press Ctrl+C to stop."
-  fetch_dns_logs 1 0
-else
-  logs=$(fetch_dns_logs 0 "$NUM")
-  echo "$logs"
-  summarize_queries "$logs"
+if [[ $EUID -ne 0 ]]; then
+  echo "⚠️  Must run as sudo/root."
+  echo "Example: sudo $0"
+  exit 1
 fi
+
+# ---------------------------
+# Check tcpdump
+# ---------------------------
+if ! command -v tcpdump &>/dev/null; then
+  echo "❌ tcpdump not found. Install it with: sudo apt install tcpdump"
+  exit 1
+fi
+
+# ---------------------------
+# Ask user for optional file output
+# ---------------------------
+SAVE_FILE=""
+read -rp "Do you want to save DNS queries to a file? [y/N]: " save_choice
+if [[ "$save_choice" =~ ^[Yy]$ ]]; then
+  read -rp "Enter full path for output file (e.g., ~/dns_log.txt): " raw_path
+  # Expand ~ to home directory
+  SAVE_FILE="${raw_path/#\~/$HOME}"
+  # Ensure the directory exists
+  mkdir -p "$(dirname "$SAVE_FILE")"
+  touch "$SAVE_FILE"
+  echo "✅ DNS queries will be saved to $SAVE_FILE"
+fi
+
+# ---------------------------
+# Color settings
+# ---------------------------
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# ---------------------------
+# Associative array to track repeated domains
+# ---------------------------
+declare -A domain_count
+
+# ---------------------------
+# Function: Monitor live DNS queries
+# ---------------------------
+monitor_dns() {
+  echo -e "${GREEN}🌐 Starting live DNS query monitoring. Press Ctrl+C to stop.${NC}"
+
+  sudo tcpdump -l -nn udp port 53 2>/dev/null \
+    | while read -r line; do
+        timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+        for word in $line; do
+          if [[ "$word" =~ \. ]]; then
+            domain="$word"
+
+            # Initialize count safely
+            count=${domain_count["$domain"]:-0}
+            count=$((count + 1))
+            domain_count["$domain"]=$count
+
+            # Choose color: red for repeated domains, yellow for first time
+            if [[ $count -gt 1 ]]; then
+              color=$RED
+            else
+              color=$YELLOW
+            fi
+
+            # Print with timestamp and color
+            echo -e "${timestamp} ${color}${domain}${NC}"
+
+            # Save to file if specified
+            if [[ -n "$SAVE_FILE" ]]; then
+              echo "${timestamp} ${domain}" >> "$SAVE_FILE"
+            fi
+          fi
+        done
+      done
+}
+
+# ---------------------------
+# Main execution
+# ---------------------------
+monitor_dns
