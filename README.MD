@@ -25,7 +25,7 @@ This section will be updated in future.
 1. Clone the repository:
 
 ```bash
-git clone <your-repo-url>
+git clone [this repo](https://github.com/fitandfine/linux-scripting-repo)
 cd linux-scripting-repo
 ```
 
