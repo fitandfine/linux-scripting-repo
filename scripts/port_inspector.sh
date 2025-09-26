@@ -1,154 +1,176 @@
 #!/usr/bin/env bash
 # port_inspector.sh
-# A Linux port inspector and management tool with safe-kill options
-#
-# Usage:
-#   ./port_inspector.sh                # List all used ports with services
-#   ./port_inspector.sh --free <port>  # Free a specific port interactively
-#   ./port_inspector.sh -h | --help    # Show help
+# A Linux port inspector and management tool with a menu-driven interface.
 #
 # Features:
-#   - Lists all TCP/UDP ports in use with PROCESS NAME + PID + USER.
-#   - Lets you kill the process holding a port, but warns for critical services.
-#   - Automatically asks for sudo if needed.
-#   - User-friendly output with warnings and confirmations.
+#   - Lists all active TCP/UDP ports with process name, PID, and user.
+#   - Provides a menu for selecting which port to free.
+#   - Detects systemd-managed services (like apache2, nginx) and suggests stopping via systemctl.
+#   - Protects critical system processes (like sshd, systemd) from accidental killing.
+#   - Fully commented for maintainability and DevOps interviews.
 
 # ------------------------------------------------------------
-# Show help function
+# Show help
 # ------------------------------------------------------------
 show_help() {
     cat <<EOF
 Port Inspector Tool
 -------------------
 This script helps you identify which ports are in use on your Linux system
-and allows you to free them interactively if required.
+and allows you to free them interactively.
 
 USAGE:
-  ./port_inspector.sh
-  ./port_inspector.sh --free <port>
-  ./port_inspector.sh --help | -h
-
-OPTIONS:
-  --free <port>   Free the given port (by killing the process using it).
-  --h, --help      Show this help message.
+  ./port_inspector.sh            # List ports and show menu
+  ./port_inspector.sh --help     # Show help
 
 EXAMPLES:
   ./port_inspector.sh
-  ./port_inspector.sh --free 8080
 EOF
 }
 
 # ------------------------------------------------------------
-# List ports and their services (with process name + PID + user)
-# ------------------------------------------------------------
-list_ports() {
-    echo "============================================================"
-    echo "Active Ports and Associated Services"
-    echo "============================================================"
-
-    # Use lsof for better process resolution (shows PID + user + command)
-    if command -v lsof >/dev/null 2>&1; then
-        sudo lsof -i -P -n | grep -E "LISTEN|UDP" | awk '{printf "%-8s %-8s %-8s %-20s %-20s %-10s\n", $1, $2, $3, $9, $8, $1}'
-        # Output columns:
-        # COMMAND   PID   USER   ADDRESS:PORT   NODE   NAME
-    elif command -v ss >/dev/null 2>&1; then
-        sudo ss -tulpn
-    else
-        echo "❌ Neither 'lsof' nor 'ss' found. Please install one of them."
-        exit 1
-    fi
-}
-
-# ------------------------------------------------------------
-# Define critical system processes that are unsafe to kill
+# Function: check if a process is a critical system service
 # ------------------------------------------------------------
 is_critical_service() {
     local process_name="$1"
     local critical=("sshd" "systemd" "init" "cron" "dbus-daemon" \
-                    "NetworkManager" "firewalld" "nginx" "apache2" "mysql" "postgres")
+                    "NetworkManager" "firewalld" "systemd-resolve")
 
     for svc in "${critical[@]}"; do
         if [[ "$process_name" == *"$svc"* ]]; then
-            return 0
+            return 0  # yes, critical
         fi
     done
-    return 1
+    return 1  # safe
 }
 
 # ------------------------------------------------------------
-# Free a port by killing its process safely
+# Function: list active ports with lsof (preferred)
+# ------------------------------------------------------------
+list_ports() {
+    # lsof gives process name, PID, user, and port details
+    sudo lsof -i -P -n | grep -E "LISTEN|UDP" | \
+    awk 'NR>0 {printf "%-5s %-10s %-8s %-8s %-25s\n", NR, $1, $2, $3, $9}' \
+    | column -t
+    # Columns:
+    # INDEX PROCESS PID USER ADDRESS:PORT
+}
+
+# ------------------------------------------------------------
+# Function: build a list of active ports (for menu)
+# ------------------------------------------------------------
+get_port_list() {
+    sudo lsof -i -P -n | grep -E "LISTEN|UDP" | \
+    awk '{print $1, $2, $3, $9}'
+}
+
+# ------------------------------------------------------------
+# Function: free a port safely
 # ------------------------------------------------------------
 free_port() {
-    PORT=$1
-    if [[ -z "$PORT" ]]; then
-        echo "❌ Error: No port specified."
-        exit 1
-    fi
-
-    # Find process info using lsof
-    PROCESS_INFO=$(sudo lsof -i :$PORT -sTCP:LISTEN -n -P | awk 'NR==2 {print $1, $2, $3}')
-    if [[ -z "$PROCESS_INFO" ]]; then
-        echo "⚠️ No process found using port $PORT."
-        exit 1
-    fi
-
-    PROCESS_NAME=$(echo "$PROCESS_INFO" | awk '{print $1}')
-    PROCESS_PID=$(echo "$PROCESS_INFO" | awk '{print $2}')
-    PROCESS_USER=$(echo "$PROCESS_INFO" | awk '{print $3}')
+    local process_name="$1"
+    local pid="$2"
+    local user="$3"
+    local port="$4"
 
     echo "============================================================"
-    echo "Process using port $PORT:"
-    echo "  Service Name : $PROCESS_NAME"
-    echo "  PID          : $PROCESS_PID"
-    echo "  User         : $PROCESS_USER"
+    echo "Selected process details:"
+    echo "  Service Name : $process_name"
+    echo "  PID          : $pid"
+    echo "  User         : $user"
+    echo "  Port         : $port"
     echo "============================================================"
 
-    # Safety check for critical processes
-    if is_critical_service "$PROCESS_NAME"; then
-        echo "⚠️ WARNING: '$PROCESS_NAME' (PID: $PROCESS_PID) is a CRITICAL system service."
+    # Step 1: Check if process is critical
+    if is_critical_service "$process_name"; then
+        echo "⚠️ WARNING: '$process_name' is a CRITICAL system service."
         echo "   Killing it may crash your server or disconnect SSH."
         read -p "Are you ABSOLUTELY sure you want to kill it? (type 'yes' to confirm): " ans
-        [[ "$ans" != "yes" ]] && { echo "❌ Operation cancelled."; exit 1; }
+        [[ "$ans" != "yes" ]] && { echo "❌ Operation cancelled."; return; }
     fi
 
-    # Elevate privileges if required
-    if [[ "$PROCESS_USER" == "root" && $EUID -ne 0 ]]; then
-        echo "⚠️ Process is owned by root. Using sudo to kill..."
-        SUDO="sudo"
-    else
-        SUDO=""
+    # Step 2: If the process is systemd-managed (e.g., apache2, nginx, mysql)
+    if systemctl list-unit-files | grep -q "$process_name"; then
+        echo "⚠️ Detected '$process_name' is managed by systemd."
+        echo "   Killing it directly will only restart it!"
+        read -p "Do you want to stop it properly via systemctl instead? (y/n): " choice
+        if [[ "$choice" == "y" ]]; then
+            sudo systemctl stop "$process_name"
+            echo "✅ Stopped $process_name service using systemctl."
+            return
+        fi
     fi
 
-    # Final confirmation
-    read -p "Do you want to kill PID $PROCESS_PID ($PROCESS_NAME)? (y/n): " confirm
+    # Step 3: Kill process safely
+    read -p "Do you want to kill PID $pid ($process_name)? (y/n): " confirm
     if [[ "$confirm" == "y" ]]; then
-        $SUDO kill -9 "$PROCESS_PID"
-        if [[ $? -eq 0 ]]; then
-            echo "✅ Process $PROCESS_PID ($PROCESS_NAME) killed. Port $PORT is now free."
+        if [[ "$user" == "root" && $EUID -ne 0 ]]; then
+            echo "⚠️ Process is owned by root. Using sudo to kill..."
+            sudo kill -9 "$pid"
         else
-            echo "❌ Failed to kill process $PROCESS_PID."
+            kill -9 "$pid"
+        fi
+
+        if [[ $? -eq 0 ]]; then
+            echo "✅ Process $pid ($process_name) killed. Port $port is now free."
+        else
+            echo "❌ Failed to kill process $pid."
         fi
     else
-        echo "✘ Operation cancelled. Port $PORT remains in use."
+        echo "✘ Operation cancelled. Port $port remains in use."
     fi
+}
+
+# ------------------------------------------------------------
+# Menu-driven interface
+# ------------------------------------------------------------
+menu_mode() {
+    echo "============================================================"
+    echo "Active Ports and Associated Services"
+    echo "============================================================"
+    echo "INDEX PROCESS    PID      USER     PORT"
+    echo "------------------------------------------------------------"
+
+    # List ports with index numbers
+    port_list=($(get_port_list)) # array of fields: process PID user port
+    i=1
+    while read -r line; do
+        echo "$i $line"
+        i=$((i+1))
+    done <<< "$(get_port_list)"
+
+    echo "------------------------------------------------------------"
+    read -p "Enter the INDEX of the port you want to free (or 'q' to quit): " choice
+
+    if [[ "$choice" == "q" ]]; then
+        echo "Exiting."
+        exit 0
+    fi
+
+    # Validate choice
+    if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
+        echo "❌ Invalid choice."
+        exit 1
+    fi
+
+    # Extract fields for selected index
+    selected_line=$(get_port_list | sed -n "${choice}p")
+    process_name=$(echo "$selected_line" | awk '{print $1}')
+    pid=$(echo "$selected_line" | awk '{print $2}')
+    user=$(echo "$selected_line" | awk '{print $3}')
+    port=$(echo "$selected_line" | awk '{print $4}')
+
+    free_port "$process_name" "$pid" "$user" "$port"
 }
 
 # ------------------------------------------------------------
 # Main logic
 # ------------------------------------------------------------
 case "$1" in
-    --h|--help)
+    -h|--help)
         show_help
         ;;
-    --free)
-        free_port "$2"
-        ;;
-    "")
-        list_ports
-        ;;
     *)
-        echo "❌ Invalid option: $1"
-        echo "Use --help to see usage."
-        exit 1
+        menu_mode
         ;;
 esac
