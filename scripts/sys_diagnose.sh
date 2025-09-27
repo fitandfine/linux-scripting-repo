@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # sys_diagnose.sh
-#
+# for line by line explanation, see sys_diagnose.md inside the notes directory
 # Comprehensive Linux service diagnostic tool with numeric indexing.
 # Lists all services on systemd-based systems and allows interactive
 # management (status, start, stop, restart, enable/disable, logs).
