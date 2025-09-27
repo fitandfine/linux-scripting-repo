@@ -22,8 +22,6 @@
 # Usage:
 #   ./sys_diagnose.sh
 #   ./sys_diagnose.sh -h | --help
-#
-# Written for DevOps interview prep (e.g., SiteHost.nz)
 ```
 
 **What / Why**
