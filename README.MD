@@ -266,6 +266,9 @@ fi
 ## [Bash Scripting Guide](https://github.com/fitandfine/linux-scripting-repo/blob/main/notes/Bash%20Scripting%20Guide.md)
 ---
 
+# Practice Basics here:
+## [Basic Bash Scripting Practice](https://github.com/fitandfine/linux-scripting-repo/blob/main/notes/practice_scripts.md)
+
 ## Tips for Beginners
 
 * Always quote variables: `"$var"`

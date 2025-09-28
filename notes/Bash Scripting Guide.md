@@ -444,3 +444,6 @@ echo "Backup complete"
 
 ---
 
+
+# Practice Basics here:
+## [Basic Bash Scripting Practice](https://github.com/fitandfine/linux-scripting-repo/blob/main/notes/practice_scripts.md)
