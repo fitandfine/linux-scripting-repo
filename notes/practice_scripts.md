@@ -3,7 +3,7 @@
 # 🧑‍💻 Bash Scripting Exercises with Solutions
 
 Author: **Anup Chapain**
-Repository: `linux-scripting-repo/exercises/bash_exercises.md`
+
 
 ---
 
