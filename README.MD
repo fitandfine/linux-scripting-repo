@@ -260,6 +260,10 @@ else
 fi
 ```
 
+
+---
+# For more bash scripting guide, read this as well:
+## [Bash Scripting Guide](https://github.com/fitandfine/linux-scripting-repo/blob/main/notes/Bash%20Scripting%20Guide.md)
 ---
 
 ## Tips for Beginners
@@ -270,8 +274,9 @@ fi
 * Start small: automate basic tasks first
 * Gradually add functions, loops, and argument handling
 
+
 ---
-# Also check out this website:
+# Also check out these websites:
 # https://explainshell.com/ by Idan Kamara
 
 # https://github.com/idank/explainshell 
