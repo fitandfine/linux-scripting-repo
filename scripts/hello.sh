@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # fruit_script.sh
-
+# Author: Anup Chapain
 # This variable will store the name of the fruit if a match is found
 matched_fruit=""
 

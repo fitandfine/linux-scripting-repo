@@ -2,7 +2,7 @@
 # php_mysql_diagnose.sh
 # A comprehensive PHP + MySQL/MariaDB troubleshooting tool for DevOps
 #
-# Author: Your Name
+# Author: Anup Chapain
 # Usage:
 #   sudo ./php_mysql_diagnose.sh          # Run diagnostics
 #   ./php_mysql_diagnose.sh --help | -h   # Show help

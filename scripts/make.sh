@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-
+# Author: Anup Chapain
+# A simple script to make another script executable and run it.
 if [[ $# -ne 1 ]]; then
   echo "Usage: ./make <script-file.sh>"
   echo " Example: ./make.sh input.sh"

@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+# Author: Anup Chapain
+# A simple script to demonstrate argument parsing.
 set -euo pipefail
 
 # Default values

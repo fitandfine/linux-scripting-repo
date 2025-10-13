@@ -4,7 +4,7 @@
 #   ./backup_dir.sh [DIRECTORY]
 # If no DIRECTORY is provided, backs up the HOME directory by default.
 # Backups are stored as /tmp/<foldername>_backup_TIMESTAMP.tar.gz
-
+# Author: Anup Chapain
 set -euo pipefail
 
 # ---------------------------

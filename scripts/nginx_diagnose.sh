@@ -13,7 +13,7 @@
 #   - Offers troubleshooting tips at the end.
 #   - Includes advanced checks (SELinux, memory, multiple processes, log dir perms).
 #
-# Author: Your Name
+# Author: Anup Chapain
 
 #------------------------------------------------------------
 # Handle --help / -h option

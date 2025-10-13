@@ -9,6 +9,7 @@
 #   - Protects critical system processes (like sshd, systemd) from accidental killing.
 #   - Fully commented for maintainability and DevOps interviews.
 
+# Author: Anup Chapain
 # ------------------------------------------------------------
 # Show help
 # ------------------------------------------------------------

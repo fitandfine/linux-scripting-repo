@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # This script uses various 'read' options to get user input for a profile.
-
+# Author: Anup Chapain
 # --- Step 1: Get the user's name with a prompt (-p) ---
 echo "--- Welcome to the Profile Creator ---"
 # The -p option displays the text inside the quotes as a prompt.

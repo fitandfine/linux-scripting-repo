@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # dns_tracker.sh
+# Author: Anup Chapain
 # --------------------
 # Purpose:
 #   Real-time DNS query monitoring on Linux.

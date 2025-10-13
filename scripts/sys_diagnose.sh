@@ -9,7 +9,7 @@
 #   ./sys_diagnose.sh
 #   ./sys_diagnose.sh -h | --help
 
-
+# Author: Anup Chapain
 # ------------------------------------------------------------
 # Function: show_help
 # Displays the help/usage message
