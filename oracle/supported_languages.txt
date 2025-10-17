@@ -1,0 +1,7 @@
+English (en): https://docs.oracle.com/en/cloud/
+Spanish (es): https://docs.oracle.com/es/cloud/
+French (fr): https://docs.oracle.com/fr/cloud/
+Italian (it): https://docs.oracle.com/it/cloud/
+Japanese (ja): https://docs.oracle.com/ja/cloud/
+Korean (ko): https://docs.oracle.com/ko/cloud/
+Arabic (ar): https://docs.oracle.com/ar/cloud/

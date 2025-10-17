@@ -1,0 +1,1 @@
+I am checking which localized Oracle Cloud documentation URLs return a 200 OK using curl, and saving the results to a file if they exist.
