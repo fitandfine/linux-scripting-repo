@@ -6,12 +6,12 @@
 #   This script tests which Oracle Cloud documentation language URLs return HTTP 200 (OK).
 #   It reads a list of language codes and names from a file (languages.txt),
 #   replaces the "en" in the base URL with each code,
-#   and performs the check in parallel with a live progress bar.
+#   and performs the check in parallel.
 #
 #   Supported URLs are written to supported_languages.txt
 #   Unsupported URLs are written to unsupported_languages.txt
 #
-#   This demonstrates parallel execution, progress tracking, and robust reporting.
+#   This demonstrates parallel execution and robust reporting.
 
 #-----------------------------
 # essential safety and error-checking
@@ -65,35 +65,49 @@ check_language() {
 
   # Perform silent curl request (no output, only HTTP code)
   status_code=$(curl -s -o /dev/null -w "%{http_code}" "$test_url")
-
+  
   # Thread-safe file writes using subshell + lock
   if [ "$status_code" -eq 200 ]; then
     echo "✅ Supported: $name ($code) -> $test_url"
     echo "$name ($code): $test_url" >> "$SUPPORTED_FILE"
+    
   else
     echo "❌ Not supported: $name ($code) [$status_code]"
     echo "$name ($code): $test_url [$status_code]" >> "$UNSUPPORTED_FILE"
+    
   fi
+#Initial idea was to show progress, but it gets messy with concurrent jobs
+#-----------------------------
+  # Increment progress safely (each job reports completion to the console)
+  # /dev/tty ensures output goes to the parent/controlling terminal even from background jobs
 
-  # Increment progress safely (each job reports completion)
-  ((COMPLETED++))
-  show_progress "$COMPLETED" "$TOTAL_LANGS"
+  #echo "$((++COMPLETED)) / $TOTAL_LANGS completed" > /dev/tty
+
+  # /dev/tty:
+# This special device file refers to the controlling terminal (the screen/keyboard
+# session) of the process that opens it. Writing to /dev/tty forces output to the
+# user's screen immediately, bypassing any shell redirection or buffering of stdout.
+# It is essential for displaying interactive prompts or real-time status messages
+# from background jobs, ensuring they are always visible to the user.
+
+# 🛑 PROGRESS TRACKING FAILURE NOTE (Subshell Variable Scope)
+# -----------------------------------------------------------
+# The initial attempt to track progress using a simple variable counter (e.g., ((COMPLETED++)))
+# failed because background jobs ('&') run in isolated environments called subshells.
+#
+# 1. VARIABLE ISOLATION: Each subshell receives its own COPY of the parent script's
+#    variables (like $COMPLETED) and can only modify its own copy.
+# 2. NO RETURN: When the subshell exits, its updated variable value is DESTROYED and 
+#    is NEVER passed back to the parent shell.
+#
+# This means the parent script's counter remains inaccurate (often 0).
+#
+# A reliable solution requires an Inter-Process Communication (IPC) mechanism, such
+# as a dedicated temporary file or named pipe, to allow the concurrent subshells
+# to safely communicate their completion status to the parent script.
+
 }
 
-# Function: show_progress
-# Purpose : Draws a simple text-based progress bar.
-show_progress() {
-  local done=$1
-  local total=$2
-  local cols=$(tput cols 2>/dev/null || echo 80)
-  local percent=$((100 * done / total))
-  local filled=$((percent * (cols - 10) / 100))
-  local empty=$((cols - 10 - filled))
-  printf "\rProgress: ["
-  printf "%0.s#" $(seq 1 $filled)
-  printf "%0.s-" $(seq 1 $empty)
-  printf "] %d%% (%d/%d)" "$percent" "$done" "$total"
-}
 
 # -----------------------------
 # MAIN EXECUTION LOOP
